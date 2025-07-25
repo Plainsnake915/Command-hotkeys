@@ -3,9 +3,9 @@
 	"id": "hotcmds",
 	"version": "${version}",
 	"name": "Hotcmds",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Bind a key to any command you want. /hotcmds to open menu",
 	"authors": [
-		"Me!"
+		"Plain_snake915"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"com.hotcmds.HotcmdsClient"
+		],
+		"modmenu": [
+			"com.hotcmds.ModMenuIntegration"
 		]
 	},
 	"mixins": [
@@ -36,6 +39,9 @@
 		"fabric-api": "*"
 	},
 	"suggests": {
+		"com.google.code.gson:gson": "2.11.0",
+		"modmenu": ">=14.0.0-rc.2",
 		"another-mod": "*"
+
 	}
 }
