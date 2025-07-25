@@ -55,7 +55,7 @@ public class AddNew extends Screen {
             MinecraftClient.getInstance().setScreen(parent);
         }).dimensions(centerX, centerY + 100, 100, 20).build();
         this.addDrawableChild(saveButton);
-        quitButton = ButtonWidget.builder(Text.of("Quit"), btn -> {
+        quitButton = ButtonWidget.builder(Text.of("Back"), btn -> {
             MinecraftClient.getInstance().setScreen(parent);
         }).dimensions(centerX - 100, centerY + 100, 100, 20).build();
         this.addDrawableChild(quitButton);

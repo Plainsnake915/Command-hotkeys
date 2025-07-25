@@ -42,7 +42,7 @@ public class ListMenu extends Screen {
             client.setScreen(new AddNew(this));
         }).dimensions(this.width/2, this.height/2+100, 100, 20).build();
         addDrawableChild(addButton);
-        quitButton = ButtonWidget.builder(Text.of("Quit"), btn -> {
+        quitButton = ButtonWidget.builder(Text.of("Back"), btn -> {
             client.setScreen(parent);
         }).dimensions(this.width/2-100,this.height/2+100,100, 20).build();
         addDrawableChild(quitButton);
