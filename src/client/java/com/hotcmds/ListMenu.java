@@ -67,7 +67,7 @@ public class ListMenu extends Screen {
 
     private class CommandEntryListWidget extends EntryListWidget<CommandEntryListWidget.CommandEntry> {
         public CommandEntryListWidget(MinecraftClient minecraftClient, int x, int y, int width, int height, int itemHeight) {
-            super(minecraftClient, width, height, y, itemHeight, itemHeight);
+            super(minecraftClient, width, height, y, itemHeight, 0);
             this.setX(x);
 
             for(KeyCommandPair dat: HotcmdsClient.INSTANCE.getKeybinds()){
