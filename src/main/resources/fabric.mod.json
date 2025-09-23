@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
 	"id": "hotcmds",
-	"version": "${version}",
-	"name": "Hotcmds",
+	"version": "1.0.1",
+	"name": "Command Hotkeys",
 	"description": "Bind a key to any command you want. /hotcmds to open menu",
 	"authors": [
 		"Plain_snake915"
@@ -12,7 +12,7 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/hotcmds/icon.png",
+	"icon": "assets/hotcmds/cmd icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

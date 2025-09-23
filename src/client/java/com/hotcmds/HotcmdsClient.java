@@ -9,16 +9,20 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 
 import net.minecraft.client.MinecraftClient;
 
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.text.JTextComponent;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -54,10 +58,13 @@ public class HotcmdsClient implements ClientModInitializer {
 	private final Path configPath = FabricLoader.getInstance().getConfigDir().resolve("hotcmds/keybindings.json");
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
+	public static final KeyBinding MENU = new KeyBinding("Open Menu", GLFW.GLFW_KEY_K,"Command Hotkeys");
+
 	@Override
 	public void onInitializeClient() {
 		loadKeyMappings();
 		registerCommands();
+		KeyBindingHelper.registerKeyBinding(MENU);
 
 
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
@@ -65,6 +72,9 @@ public class HotcmdsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
 			if (MinecraftClient.getInstance().currentScreen != null && !(MinecraftClient.getInstance().currentScreen instanceof HandledScreen<?>)) {
 				return;
+			}
+			if(MENU.wasPressed()){
+				minecraftClient.setScreen(new ListMenu(minecraftClient.currentScreen));
 			}
 
 
