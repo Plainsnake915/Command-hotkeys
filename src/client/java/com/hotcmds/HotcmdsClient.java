@@ -50,13 +50,22 @@ public class HotcmdsClient implements ClientModInitializer {
 	private final Path configPath = FabricLoader.getInstance().getConfigDir().resolve("hotcmds/keybindings.json");
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-	//public static final KeyBinding MENU = new KeyBinding("Open Menu", GLFW.GLFW_KEY_K,new KeyBinding.Category(Identifier.of("Command Hotkeys")));
-
+	public static KeyBinding MENU;
+	public static KeyBinding.Category category;
+	public static Identifier id;
 	@Override
 	public void onInitializeClient() {
 		loadKeyMappings();
 		registerCommands();
-		//KeyBindingHelper.registerKeyBinding(MENU);
+
+
+		id = Identifier.of(MOD_ID);
+		category = new KeyBinding.Category(id);
+
+		MENU = new KeyBinding("Open menu", GLFW.GLFW_KEY_K, category);
+		MENU = KeyBindingHelper.registerKeyBinding(MENU);
+
+
 
 
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
@@ -65,9 +74,9 @@ public class HotcmdsClient implements ClientModInitializer {
 			if (MinecraftClient.getInstance().currentScreen != null && !(MinecraftClient.getInstance().currentScreen instanceof HandledScreen<?>)) {
 				return;
 			}
-			/*if(MENU.wasPressed()){
+			if(MENU.wasPressed()){
 				minecraftClient.setScreen(new ListMenu(minecraftClient.currentScreen));
-			}*/
+			}
 
 
 			for (int keyCode : INSTANCE.keyToCommand.keySet()) {
