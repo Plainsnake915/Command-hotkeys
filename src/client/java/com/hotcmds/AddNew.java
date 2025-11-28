@@ -65,7 +65,6 @@ public class AddNew extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-
         context.drawText(this.textRenderer, "/", commandField.getX() - 10, commandField.getY() + 6, 0xFFFFFFFF, true);
         context.drawText(textRenderer, "key: " + GLFW.glfwGetKeyName(keybinding, 0), setKeyButton.getX() + 120, setKeyButton.getY() + 7, 0xFFFFFFFF, true);
     }
