@@ -18,11 +18,11 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.text.JTextComponent;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -35,14 +35,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-class KeyCommandPair{
-	public int key;
-	public String command;
-	public KeyCommandPair(int k, String str){
-		key = k;
-		command = str;
-	}
-}
 public class HotcmdsClient implements ClientModInitializer {
 	public static final HotcmdsClient INSTANCE = new HotcmdsClient();
 
@@ -58,13 +50,13 @@ public class HotcmdsClient implements ClientModInitializer {
 	private final Path configPath = FabricLoader.getInstance().getConfigDir().resolve("hotcmds/keybindings.json");
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-	public static final KeyBinding MENU = new KeyBinding("Open Menu", GLFW.GLFW_KEY_K,"Command Hotkeys");
+	//public static final KeyBinding MENU = new KeyBinding("Open Menu", GLFW.GLFW_KEY_K,new KeyBinding.Category(Identifier.of("Command Hotkeys")));
 
 	@Override
 	public void onInitializeClient() {
 		loadKeyMappings();
 		registerCommands();
-		KeyBindingHelper.registerKeyBinding(MENU);
+		//KeyBindingHelper.registerKeyBinding(MENU);
 
 
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
@@ -73,9 +65,9 @@ public class HotcmdsClient implements ClientModInitializer {
 			if (MinecraftClient.getInstance().currentScreen != null && !(MinecraftClient.getInstance().currentScreen instanceof HandledScreen<?>)) {
 				return;
 			}
-			if(MENU.wasPressed()){
+			/*if(MENU.wasPressed()){
 				minecraftClient.setScreen(new ListMenu(minecraftClient.currentScreen));
-			}
+			}*/
 
 
 			for (int keyCode : INSTANCE.keyToCommand.keySet()) {
@@ -83,7 +75,7 @@ public class HotcmdsClient implements ClientModInitializer {
 				boolean isPressed = false;
 
 				try {
-					isPressed = InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keyCode);
+					isPressed = InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow(), keyCode);
 				} catch (Exception e) {
 					return;
 				}

@@ -66,19 +66,20 @@ public class AddNew extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
 
+
         context.drawText(this.textRenderer, "/", commandField.getX() - 10, commandField.getY() + 6, 0xFFFFFFFF, true);
         context.drawText(textRenderer, "key: " + GLFW.glfwGetKeyName(keybinding, 0), setKeyButton.getX() + 120, setKeyButton.getY() + 7, 0xFFFFFFFF, true);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyInput key) {
         if (waitforkey) {
-            keybinding = keyCode;
-            setKeyButton.setMessage(Text.of(GLFW.glfwGetKeyName(keyCode, 0)));
+            keybinding = key.getKeycode();
+            setKeyButton.setMessage(Text.of(GLFW.glfwGetKeyName(key.getKeycode(), 0)));
             waitforkey = false;
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(key);
     }
 
 }
