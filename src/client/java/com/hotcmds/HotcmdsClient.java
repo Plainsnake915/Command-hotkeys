@@ -14,7 +14,13 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import net.minecraft.client.MinecraftClient;
 
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen;
+import net.minecraft.client.gui.screen.ingame.AnvilScreen;
+import net.minecraft.client.gui.screen.ingame.BookEditScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 
@@ -90,7 +96,7 @@ public class HotcmdsClient implements ClientModInitializer {
 				}
 				boolean wasPressed = INSTANCE.keyStates.getOrDefault(keyCode, false);
 				if (isPressed && !wasPressed) {
-					if (minecraftClient.player != null && minecraftClient.getNetworkHandler() != null) {
+					if (minecraftClient.player != null && minecraftClient.getNetworkHandler() != null && !isTyping(minecraftClient.currentScreen)) {
 						minecraftClient.getNetworkHandler().sendChatCommand(INSTANCE.keyToCommand.get(keyCode));
 
 					}
@@ -166,6 +172,32 @@ public class HotcmdsClient implements ClientModInitializer {
 			list.add(new KeyCommandPair(entry.getKey(), entry.getValue()));
 		}
 		return list;
+	}
+
+	private boolean isTyping(Screen screen){
+		if (screen == null) return false;
+
+		// 1. If the focused element is a text field → typing
+		if (screen.getFocused() instanceof TextFieldWidget textField && textField.isFocused()) {
+			return true;
+		}
+
+		// 2. If the screen is a chat screen → typing
+		if (screen instanceof ChatScreen) {
+			return true;
+		}
+
+		// 3. If the screen is a sign/book/anvil editor → typing
+		if (screen instanceof AbstractSignEditScreen
+				|| screen instanceof AnvilScreen
+				|| screen instanceof BookEditScreen) {
+			return true;
+		}
+
+		return false;
+
+
+
 	}
 
 
