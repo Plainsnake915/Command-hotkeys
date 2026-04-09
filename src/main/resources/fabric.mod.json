@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "hotcmds",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"name": "Command Hotkeys",
 	"description": "Bind a key to any command you want. /hotcmds to open menu",
 	"authors": [
@@ -34,13 +34,13 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.16.14",
-		"minecraft": "~1.21.5",
+		"minecraft": "~1.21.10",
 		"java": ">=21",
 		"fabric-api": "*"
 	},
 	"suggests": {
 		"com.google.code.gson:gson": "2.11.0",
-		"modmenu": ">=14.0.0-rc.2",
+		"modmenu": ">=16.0.0-rc.1",
 		"another-mod": "*"
 
 	}

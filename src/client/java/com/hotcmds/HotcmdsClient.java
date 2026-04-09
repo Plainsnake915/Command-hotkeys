@@ -14,15 +14,21 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import net.minecraft.client.MinecraftClient;
 
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen;
+import net.minecraft.client.gui.screen.ingame.AnvilScreen;
+import net.minecraft.client.gui.screen.ingame.BookEditScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.text.JTextComponent;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -35,14 +41,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-class KeyCommandPair{
-	public int key;
-	public String command;
-	public KeyCommandPair(int k, String str){
-		key = k;
-		command = str;
-	}
-}
 public class HotcmdsClient implements ClientModInitializer {
 	public static final HotcmdsClient INSTANCE = new HotcmdsClient();
 
@@ -58,13 +56,22 @@ public class HotcmdsClient implements ClientModInitializer {
 	private final Path configPath = FabricLoader.getInstance().getConfigDir().resolve("hotcmds/keybindings.json");
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-	public static final KeyBinding MENU = new KeyBinding("Open Menu", GLFW.GLFW_KEY_K,"Command Hotkeys");
-
+	public static KeyBinding MENU;
+	public static KeyBinding.Category category;
+	public static Identifier id;
 	@Override
 	public void onInitializeClient() {
 		loadKeyMappings();
 		registerCommands();
-		KeyBindingHelper.registerKeyBinding(MENU);
+
+
+		id = Identifier.of(MOD_ID);
+		category = new KeyBinding.Category(id);
+
+		MENU = new KeyBinding("Open menu", GLFW.GLFW_KEY_K, category);
+		MENU = KeyBindingHelper.registerKeyBinding(MENU);
+
+
 
 
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
@@ -83,13 +90,13 @@ public class HotcmdsClient implements ClientModInitializer {
 				boolean isPressed = false;
 
 				try {
-					isPressed = InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), keyCode);
+					isPressed = InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow(), keyCode);
 				} catch (Exception e) {
 					return;
 				}
 				boolean wasPressed = INSTANCE.keyStates.getOrDefault(keyCode, false);
 				if (isPressed && !wasPressed) {
-					if (minecraftClient.player != null && minecraftClient.getNetworkHandler() != null) {
+					if (minecraftClient.player != null && minecraftClient.getNetworkHandler() != null && !isTyping(minecraftClient.currentScreen)) {
 						minecraftClient.getNetworkHandler().sendChatCommand(INSTANCE.keyToCommand.get(keyCode));
 
 					}
@@ -165,6 +172,32 @@ public class HotcmdsClient implements ClientModInitializer {
 			list.add(new KeyCommandPair(entry.getKey(), entry.getValue()));
 		}
 		return list;
+	}
+
+	private boolean isTyping(Screen screen){
+		if (screen == null) return false;
+
+		// 1. If the focused element is a text field → typing
+		if (screen.getFocused() instanceof TextFieldWidget textField && textField.isFocused()) {
+			return true;
+		}
+
+		// 2. If the screen is a chat screen → typing
+		if (screen instanceof ChatScreen) {
+			return true;
+		}
+
+		// 3. If the screen is a sign/book/anvil editor → typing
+		if (screen instanceof AbstractSignEditScreen
+				|| screen instanceof AnvilScreen
+				|| screen instanceof BookEditScreen) {
+			return true;
+		}
+
+		return false;
+
+
+
 	}
 
 

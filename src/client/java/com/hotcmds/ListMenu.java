@@ -34,7 +34,7 @@ public class ListMenu extends Screen {
         int listHeight = 160;
         int x = (this.width  - listWidth)  / 2;
         int y = (this.height - listHeight) / 2;
-        int itemHeight =  30;
+        int itemHeight =  25;
         entryList = new CommandEntryListWidget(this.client, x, y-40, listWidth, listHeight, itemHeight);
         this.addSelectableChild(entryList);
 
@@ -67,7 +67,7 @@ public class ListMenu extends Screen {
 
     private class CommandEntryListWidget extends EntryListWidget<CommandEntryListWidget.CommandEntry> {
         public CommandEntryListWidget(MinecraftClient minecraftClient, int x, int y, int width, int height, int itemHeight) {
-            super(minecraftClient, width, height, y, itemHeight, 0);
+            super(minecraftClient, width, height, y, itemHeight);
             this.setX(x);
 
             for(KeyCommandPair dat: HotcmdsClient.INSTANCE.getKeybinds()){
@@ -113,33 +113,43 @@ public class ListMenu extends Screen {
                         .build();
             }
 
+
             @Override
-            public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickProgress) {
+            public void render(DrawContext context, int mousex, int mousey, boolean hovered, float tickDelta) {
+                // Get x/width/height from the parent list
+                int index = entryList.children().indexOf(this);
+                int x = entryList.getRowLeft();
+                int y = entryList.getRowTop(index);
+                int entryWidth = entryList.getRowWidth();
+                int entryHeight = entryList.itemHeight; // or entryList.getRowHeight() if available
 
-
-                context.fill(x, y, x + entryWidth, y + entryHeight, 0xFF808080);
+                // Background fill
+                context.fill(x, y+1, x + entryWidth, y + entryHeight-2,0xFFAAAAAA);
 
                 // Render the command-key text
-
-
-                context.drawText(getTextRenderer(), Text.literal("Command: " + command + ", Key: " + GLFW.glfwGetKeyName(key, 0)), x+2, y + 2, 0xFFFFFFFF, true);
+                context.drawTextWithShadow(
+                        getTextRenderer(),
+                        Text.literal("Command: " + command + ", Key: " + GLFW.glfwGetKeyName(key, 0)),
+                        x + 2, y + 2,
+                        0xFFFFFFFF
+                );
 
                 // Position and render the remove button
-                this.removeButton.setX(x + entryWidth - 70); // Align to the right
-                this.removeButton.setY(y+2);
-                this.removeButton.render(context, mouseX, mouseY, tickProgress);
-                if(removeButton.getY() < entryList.getBottom()-20  && removeButton.getY() > entryList.getY()) {
+                this.removeButton.setX(x + entryWidth - 70);
+                this.removeButton.setY(y + 2);
+                this.removeButton.render(context, mousex, mousey, tickDelta); // mouse coords not passed anymore
+
+                // Visibility check
+                if (removeButton.getY() < entryList.getBottom() - 20 && removeButton.getY() > entryList.getY()) {
                     removeButton.visible = true;
-                }else {
-                    removeButton.visible=false;
+                } else {
+                    removeButton.visible = false;
                 }
-
-
             }
             @Override
-            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            public boolean mouseClicked(net.minecraft.client.gui.Click click, boolean doubled) {
+                return this.removeButton.mouseClicked(click, doubled);
 
-                return this.removeButton.mouseClicked(mouseX, mouseY, button);
             }
 
 
