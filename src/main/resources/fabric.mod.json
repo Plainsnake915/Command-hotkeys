@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "hotcmds",
+	"id": "commandhotkeys",
 	"version": "1.0.2",
 	"name": "Command Hotkeys",
 	"description": "Bind a key to any command you want. /hotcmds to open menu",
@@ -26,21 +26,17 @@
 		]
 	},
 	"mixins": [
-		"hotcmds.mixins.json",
-		{
-			"config": "hotcmds.client.mixins.json",
-			"environment": "client"
-		}
+
 	],
 	"depends": {
-		"fabricloader": ">=0.16.14",
-		"minecraft": "~1.21.10",
-		"java": ">=21",
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~26.1.1",
+		"java": ">=25",
 		"fabric-api": "*"
 	},
 	"suggests": {
 		"com.google.code.gson:gson": "2.11.0",
-		"modmenu": ">=16.0.0-rc.1",
+		"modmenu": ">=18.0.0-alpha.8",
 		"another-mod": "*"
 
 	}

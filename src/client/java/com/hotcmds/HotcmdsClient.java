@@ -5,30 +5,42 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.KeyboardHandler;
+import net.minecraft.client.Minecraft;
 
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen;
-import net.minecraft.client.gui.screen.ingame.AnvilScreen;
-import net.minecraft.client.gui.screen.ingame.BookEditScreen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+
+
+import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.client.gui.screens.inventory.AnvilScreen;
+import net.minecraft.client.gui.screens.inventory.BookEditScreen;
+
+
+import net.minecraft.client.gui.screens.options.controls.KeyBindsList;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.contents.KeybindContents;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.text.JTextComponent;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -56,8 +68,9 @@ public class HotcmdsClient implements ClientModInitializer {
 	private final Path configPath = FabricLoader.getInstance().getConfigDir().resolve("hotcmds/keybindings.json");
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-	public static KeyBinding MENU;
-	public static KeyBinding.Category category;
+
+	public static KeyMapping MENU;
+	public static KeyMapping.Category category;
 	public static Identifier id;
 	@Override
 	public void onInitializeClient() {
@@ -65,11 +78,13 @@ public class HotcmdsClient implements ClientModInitializer {
 		registerCommands();
 
 
-		id = Identifier.of(MOD_ID);
-		category = new KeyBinding.Category(id);
+		id = Identifier.fromNamespaceAndPath("command-hotkeys", "open_menu");
+		category = new KeyMapping.Category(id);
 
-		MENU = new KeyBinding("Open menu", GLFW.GLFW_KEY_K, category);
-		MENU = KeyBindingHelper.registerKeyBinding(MENU);
+
+		MENU = new KeyMapping("Open menu", GLFW.GLFW_KEY_K, category);
+
+		MENU = KeyMappingHelper.registerKeyMapping(MENU);
 
 
 
@@ -77,11 +92,11 @@ public class HotcmdsClient implements ClientModInitializer {
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
 		LOGGER.info("passed");
 		ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
-			if (MinecraftClient.getInstance().currentScreen != null && !(MinecraftClient.getInstance().currentScreen instanceof HandledScreen<?>)) {
+			if (Minecraft.getInstance().screen != null && !(Minecraft.getInstance().screen instanceof AbstractContainerScreen<?>)) {
 				return;
 			}
-			if(MENU.wasPressed()){
-				minecraftClient.setScreen(new ListMenu(minecraftClient.currentScreen));
+			if(MENU.consumeClick()){
+				minecraftClient.setScreen(new ListMenu(Minecraft.getInstance().screen));
 			}
 
 
@@ -90,14 +105,14 @@ public class HotcmdsClient implements ClientModInitializer {
 				boolean isPressed = false;
 
 				try {
-					isPressed = InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow(), keyCode);
+					isPressed = InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), keyCode);
 				} catch (Exception e) {
 					return;
 				}
 				boolean wasPressed = INSTANCE.keyStates.getOrDefault(keyCode, false);
 				if (isPressed && !wasPressed) {
-					if (minecraftClient.player != null && minecraftClient.getNetworkHandler() != null && !isTyping(minecraftClient.currentScreen)) {
-						minecraftClient.getNetworkHandler().sendChatCommand(INSTANCE.keyToCommand.get(keyCode));
+					if (minecraftClient.player != null && minecraftClient.getConnection() != null && !isTyping(minecraftClient.screen)) {
+						minecraftClient.player.connection.sendCommand(INSTANCE.keyToCommand.get(keyCode));
 
 					}
 				}
@@ -174,11 +189,11 @@ public class HotcmdsClient implements ClientModInitializer {
 		return list;
 	}
 
-	private boolean isTyping(Screen screen){
+	private boolean isTyping(net.minecraft.client.gui.screens.Screen screen){
 		if (screen == null) return false;
 
 		// 1. If the focused element is a text field → typing
-		if (screen.getFocused() instanceof TextFieldWidget textField && textField.isFocused()) {
+		if (screen.getFocused() instanceof EditBox) {
 			return true;
 		}
 
@@ -194,6 +209,7 @@ public class HotcmdsClient implements ClientModInitializer {
 			return true;
 		}
 
+
 		return false;
 
 
@@ -204,16 +220,16 @@ public class HotcmdsClient implements ClientModInitializer {
 	private void registerCommands() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
 			dispatcher.register(
-					ClientCommandManager.literal("hotcmds")
+					ClientCommands.literal("hotcmds")
 							.executes(context -> {
-								MinecraftClient client = MinecraftClient.getInstance();
+								Minecraft client = Minecraft.getInstance();
 								if (client != null) {
 									client.execute(() -> {
 
 										AtomicBoolean open = new AtomicBoolean(true);
 										ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
 											if (open.get())
-												client.setScreen(new ListMenu(client.currentScreen));
+												client.setScreen(new ListMenu(client.screen));
 											open.set(false);
 										});
 

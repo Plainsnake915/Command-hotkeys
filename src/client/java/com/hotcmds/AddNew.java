@@ -1,35 +1,39 @@
 package com.hotcmds;
 
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
 
 
+
+
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 
-import net.minecraft.client.util.InputUtil;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 @Environment(EnvType.CLIENT)
 public class AddNew extends Screen {
     private final Screen parent;
-    private TextFieldWidget commandField;
-    private ButtonWidget setKeyButton;
-    private ButtonWidget saveButton;
-    private ButtonWidget quitButton;
+    private EditBox commandField;
+    private Button setKeyButton;
+    private Button saveButton;
+    private Button quitButton;
     private boolean waitforkey = false;
     private int keybinding = GLFW.GLFW_KEY_A;
 
 
     public AddNew(Screen parent) {
-        super(Text.literal("Add new"));
+        super(Component.literal("Add new"));
         this.parent = parent;
     }
 
@@ -39,47 +43,49 @@ public class AddNew extends Screen {
         int centerY = this.height / 2;
 
         // Command input field
-        commandField = new TextFieldWidget(this.textRenderer, centerX - 100, centerY - 50, 200, 20, Text.of("Command"));
+        commandField = new EditBox(this.font, centerX - 100, centerY - 50, 200, 20, Component.literal("Command"));
         commandField.setMaxLength(100);
-        commandField.setPlaceholder(Text.of(""));
-        this.addDrawableChild(commandField);
+        commandField.setValue("null");
+        
+        this.addRenderableWidget(commandField);
         // Key button
-        setKeyButton = ButtonWidget.builder(Text.of("SET"), btn -> {
+        setKeyButton = Button.builder(Component.literal("SET"), btn -> {
             waitforkey = true;
-            btn.setMessage(Text.of("Press key..."));
-        }).dimensions(centerX - 100, centerY - 20, 100, 20).build();
-        this.addDrawableChild(setKeyButton);
-        saveButton = ButtonWidget.builder(Text.of("Save and Close"), btn -> {
-            String command = commandField.getText();
+            btn.setMessage(Component.literal("Press key..."));
+        }).bounds(centerX - 100, centerY - 20, 100, 20).build();
+        this.addRenderableWidget(setKeyButton);
+        saveButton = Button.builder(Component.literal("Save and Close"), btn -> {
+            String command = commandField.getValue();
             HotcmdsClient.INSTANCE.addKeyMapping(keybinding, command);
-            MinecraftClient.getInstance().setScreen(parent);
-        }).dimensions(centerX, centerY + 100, 100, 20).build();
-        this.addDrawableChild(saveButton);
-        quitButton = ButtonWidget.builder(Text.of("Back"), btn -> {
-            MinecraftClient.getInstance().setScreen(parent);
-        }).dimensions(centerX - 100, centerY + 100, 100, 20).build();
-        this.addDrawableChild(quitButton);
+            Minecraft.getInstance().setScreen(parent);
+        }).bounds(centerX, centerY + 100, 100, 20).build();
+        this.addRenderableWidget(saveButton);
+        quitButton = Button.builder(Component.literal("Back"), btn -> {
+            Minecraft.getInstance().setScreen(parent);
+        }).bounds(centerX - 100, centerY + 100, 100, 20).build();
+        this.addRenderableWidget(quitButton);
 
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
 
-        context.drawText(this.textRenderer, "/", commandField.getX() - 10, commandField.getY() + 6, 0xFFFFFFFF, true);
-        context.drawText(textRenderer, "key: " + GLFW.glfwGetKeyName(keybinding, 0), setKeyButton.getX() + 120, setKeyButton.getY() + 7, 0xFFFFFFFF, true);
+        context.text(this.font, "/", commandField.getX() - 10, commandField.getY() + 6, 0xFFFFFFFF, true);
+        context.text(font, "key: " + GLFW.glfwGetKeyName(keybinding, 0), setKeyButton.getX() + 120, setKeyButton.getY() + 7, 0xFFFFFFFF, true);
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyInput key) {
+    public boolean keyPressed(KeyEvent event) {
+
         if (waitforkey) {
-            keybinding = key.getKeycode();
-            setKeyButton.setMessage(Text.of(GLFW.glfwGetKeyName(key.getKeycode(), 0)));
+            keybinding = event.key();
+            setKeyButton.setMessage(Component.literal(GLFW.glfwGetKeyName(event.key(), 0)));
             waitforkey = false;
             return true;
         }
-        return super.keyPressed(key);
+        return super.keyPressed(event);
     }
 
 }
