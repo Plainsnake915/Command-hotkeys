@@ -57,11 +57,11 @@ public class AddNew extends Screen {
         saveButton = Button.builder(Component.literal("Save and Close"), btn -> {
             String command = commandField.getValue();
             HotcmdsClient.INSTANCE.addKeyMapping(keybinding, command);
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().setScreenAndShow(parent);
         }).bounds(centerX, centerY + 100, 100, 20).build();
         this.addRenderableWidget(saveButton);
         quitButton = Button.builder(Component.literal("Back"), btn -> {
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().setScreenAndShow(parent);
         }).bounds(centerX - 100, centerY + 100, 100, 20).build();
         this.addRenderableWidget(quitButton);
 

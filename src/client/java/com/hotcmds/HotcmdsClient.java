@@ -92,11 +92,11 @@ public class HotcmdsClient implements ClientModInitializer {
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
 		LOGGER.info("passed");
 		ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
-			if (Minecraft.getInstance().screen != null && !(Minecraft.getInstance().screen instanceof AbstractContainerScreen<?>)) {
+			if (Minecraft.getInstance().gui.screen() != null && !(Minecraft.getInstance().gui.screen() instanceof AbstractContainerScreen<?>)) {
 				return;
 			}
 			if(MENU.consumeClick()){
-				minecraftClient.setScreen(new ListMenu(Minecraft.getInstance().screen));
+				minecraftClient.setScreenAndShow(new ListMenu(Minecraft.getInstance().gui.screen()));
 			}
 
 
@@ -111,7 +111,7 @@ public class HotcmdsClient implements ClientModInitializer {
 				}
 				boolean wasPressed = INSTANCE.keyStates.getOrDefault(keyCode, false);
 				if (isPressed && !wasPressed) {
-					if (minecraftClient.player != null && minecraftClient.getConnection() != null && !isTyping(minecraftClient.screen)) {
+					if (minecraftClient.player != null && minecraftClient.getConnection() != null && !isTyping(minecraftClient.gui.screen())) {
 						minecraftClient.player.connection.sendCommand(INSTANCE.keyToCommand.get(keyCode));
 
 					}
@@ -229,7 +229,7 @@ public class HotcmdsClient implements ClientModInitializer {
 										AtomicBoolean open = new AtomicBoolean(true);
 										ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
 											if (open.get())
-												client.setScreen(new ListMenu(client.screen));
+												client.setScreenAndShow(new ListMenu(client.gui.screen()));
 											open.set(false);
 										});
 
