@@ -40,11 +40,11 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
         this.addRenderableWidget(entryList);
 
         addButton = Button.builder(Component.literal("Add New"), btn -> {
-            Minecraft.getInstance().setScreen(new AddNew(this));
+            Minecraft.getInstance().setScreenAndShow(new AddNew(this));
         }).bounds(this.width/2, this.height/2+100, 100, 20).build();
         addRenderableWidget(addButton);
         quitButton = Button.builder(Component.literal("Back"), btn -> {
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().setScreenAndShow(parent);
         }).bounds(this.width/2-100,this.height/2+100,100, 20).build();
         addRenderableWidget(quitButton);
 
