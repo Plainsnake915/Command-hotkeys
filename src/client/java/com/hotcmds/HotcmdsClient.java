@@ -176,13 +176,20 @@ public class HotcmdsClient implements ClientModInitializer {
 
 	public void removeKey(int keyCode) {
 
+		INSTANCE.entries.removeIf(pair -> pair.key == keyCode);
+
+		saveKeyMappings();
+	}
+	public void inMenu(int keyCode) {
+
 		for(KeyCommandPair pair: INSTANCE.entries){
 			if(pair.key == keyCode){
-				INSTANCE.entries.remove(pair);
+				pair.inMenu=!pair.inMenu;
 			}
 		}
 		saveKeyMappings();
 	}
+
 
 	public List<KeyCommandPair> getKeybinds() {
 
