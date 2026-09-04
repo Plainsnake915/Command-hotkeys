@@ -3,18 +3,22 @@ package com.hotcmds;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.jspecify.annotations.Nullable;
+import net.minecraft.network.chat.MutableComponent;
 import org.lwjgl.glfw.GLFW;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 @Environment(EnvType.CLIENT)
 public class ListMenu extends net.minecraft.client.gui.screens.Screen {
@@ -71,9 +75,10 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
             super(Minecraft.getInstance(), width, height, y, itemHeight);
             this.setX(x);
 
+
             for(KeyCommandPair dat: HotcmdsClient.INSTANCE.getKeybinds()){
 
-                this.addEntry(new CommandEntry(dat.command, dat.key));
+                this.addEntry(new CommandEntry(dat));
 
 
 
@@ -89,6 +94,34 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
         public int getRowWidth() {
             return this.width - 10;
         }
+        public class menuButton extends Button{
+            private KeyCommandPair entry;
+
+
+
+            protected menuButton(int x, int y, int width, int height,KeyCommandPair pair, CreateNarration createNarration) {
+                super(x, y, width, height, Component.literal("InMenu"), btn -> {HotcmdsClient.INSTANCE.inMenu(pair.key);}, createNarration);
+                entry = pair;
+                setTooltip(Tooltip.create(Component.literal("Enables/disables use in menus")));
+
+            }
+
+
+
+            @Override
+            protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+
+                boolean enabled = entry.inMenu;
+
+                int color = enabled ? 0xFF00FF00 : 0xFFFF0000; // green/red
+
+                graphics.fill(getX(), getY(), getX() + width, getY() + height, color);
+
+
+
+            }
+
+        }
 
 
 
@@ -96,22 +129,30 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
 
 
         public class CommandEntry extends ObjectSelectionList.Entry<CommandList.CommandEntry> {
-            private final String command;
-            private final int key;
-            private Button removeButton;
+            private final KeyCommandPair pair;
+            private final Button removeButton;
+            private final Button menuButton;
 
 
 
-            public CommandEntry(String command, int key) {
-                this.command = command;
-                this.key = key;
-                
+            public CommandEntry(KeyCommandPair pair) {
+                this.pair = pair;
+
+                this.menuButton = new menuButton(0, 0, 10, 20,pair,
+
+
+                        defaultNarrationSupplier -> null);
+
+
+
+
                 this.removeButton = Button.builder(
                                 Component.literal("Remove"),
                                 button -> {
 
-                                    HotcmdsClient.INSTANCE.removeKey(key);
-                                    entryList.removeEntry(this);
+                                    HotcmdsClient.INSTANCE.removeKey(pair.key);
+                                    Minecraft.getInstance().execute(() -> entryList.removeEntry(this));
+
 
 
                                 })
@@ -119,6 +160,7 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
                         .build();
 
             }
+
             @Override
             public void extractContent(GuiGraphicsExtractor context, int i, int j, boolean bl, float f){
                 // Get x/width/height from the parent list
@@ -133,17 +175,34 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
                 context.fill(x, y+1, x + entryWidth, y + entryHeight,0x80555555);
 
                 // Render the command-key text
-                context.text(
-                        Minecraft.getInstance().font,
-                        Component.literal("Command: " + command + ", Key: " + GLFW.glfwGetKeyName(key, 0)),
-                        x + 2, this.getContentYMiddle()-2,
-                        0xFFFFFFFF,true
-                );
+                Component text = Component.literal("Command: " + pair.command + ", Key: " + GLFW.glfwGetKeyName(pair.key, 0));
+
+                int textX = x + 2;
+                int textY = this.getContentYMiddle() - 2;
+
+                // Reserve space for the buttons on the right so text doesn't scroll under them
+                int maxTextWidth = entryWidth - 74; // adjust based on button widths/margins
+
+                int textWidth = Minecraft.getInstance().font.width(text);
+
+                if (textWidth <= maxTextWidth) {
+                    // Fits fine, no scrolling needed
+                    context.text(Minecraft.getInstance().font, text, textX, textY, 0xFFFFFFFF, true);
+                } else {
+                    drawScrollingText(context, text, textX, textY, maxTextWidth);
+                }
+
 
                 // Position and render the remove button
                 this.removeButton.setX(x + entryWidth - 70);
                 this.removeButton.setY(this.getContentYMiddle()-9);
-                this.removeButton.extractRenderState(context, i, j, f); // mouse coords not passed anymore
+                this.removeButton.extractRenderState(context, i, j, f);
+                this.menuButton.setX(x + entryWidth - 10);
+                this.menuButton.setY(this.getContentYMiddle()-9);
+                this.menuButton.extractRenderState(context, i, j, f);
+
+                // mouse coords not passed anymore
+
 
                 // Visibility check
                 if (removeButton.getY() < entryList.getBottom() - 20 && removeButton.getY() > entryList.getY()) {
@@ -151,6 +210,35 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
                 } else {
                     removeButton.visible = false;
                 }
+            }
+            private void drawScrollingText(GuiGraphicsExtractor context, Component text, int x, int y, int maxWidth) {
+                var font = Minecraft.getInstance().font;
+                int textWidth = font.width(text);
+                int overflow = textWidth - maxWidth;
+
+                // How long a full cycle (scroll left, pause, snap back, pause) takes, in ms
+                int scrollDuration = 3000;
+                int pauseDuration = 800;
+                int cycleDuration = scrollDuration + pauseDuration;
+
+                long time = System.currentTimeMillis();
+                long cyclePos = time % cycleDuration;
+
+                float scrollOffset;
+                if (cyclePos < pauseDuration) {
+                    scrollOffset = 0; // pause at start, fully readable at left edge
+                } else {
+                    float progress = (cyclePos - pauseDuration) / (float) scrollDuration;
+                    progress = Math.min(progress, 1.0f);
+                    scrollOffset = progress * overflow;
+                }
+
+                // Clip rendering to the box so text doesn't bleed outside it
+                context.enableScissor(x, y - 1, x + maxWidth, y + font.lineHeight + 1);
+
+                context.text(font, text, x - (int) scrollOffset, y, 0xFFFFFFFF, true);
+
+                context.disableScissor();
             }
 
 
@@ -161,7 +249,10 @@ public class ListMenu extends net.minecraft.client.gui.screens.Screen {
 
             @Override
             public boolean mouseClicked(MouseButtonEvent click, boolean doubleclick) {
-                return this.removeButton.mouseClicked(click, doubleclick);
+                if (this.removeButton.mouseClicked(click, doubleclick)) {
+                    return true;
+                }
+                return this.menuButton.mouseClicked(click, doubleclick);
 
             }
 
