@@ -65,6 +65,7 @@ public class HotcmdsClient implements ClientModInitializer {
 
 	private final Map<Integer, String> keyToCommand = new HashMap<>();
 	private final Map<Integer, Boolean> keyStates = new HashMap<>();
+	private final ArrayList<KeyCommandPair> entries= new ArrayList<>();
 	private final Path configPath = FabricLoader.getInstance().getConfigDir().resolve("hotcmds/keybindings.json");
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -92,38 +93,38 @@ public class HotcmdsClient implements ClientModInitializer {
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
 		LOGGER.info("passed");
 		ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
-			if (Minecraft.getInstance().screen != null && !(Minecraft.getInstance().screen instanceof AbstractContainerScreen<?>)) {
+			if (Minecraft.getInstance().gui.screen() != null && !(Minecraft.getInstance().gui.screen() instanceof AbstractContainerScreen<?>)) {
 				return;
 			}
 			if(MENU.consumeClick()){
-				minecraftClient.setScreen(new ListMenu(Minecraft.getInstance().screen));
+				minecraftClient.setScreenAndShow(new ListMenu(Minecraft.getInstance().gui.screen()));
 			}
 
 
-			for (int keyCode : INSTANCE.keyToCommand.keySet()) {
+			for (KeyCommandPair keyCode : INSTANCE.entries) {
 
 				boolean isPressed = false;
 
 				try {
-					isPressed = InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), keyCode);
+					isPressed = InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), keyCode.key);
 				} catch (Exception e) {
 					return;
 				}
-				boolean wasPressed = INSTANCE.keyStates.getOrDefault(keyCode, false);
+				boolean wasPressed = keyCode.keyState;
 				if (isPressed && !wasPressed) {
-					if (minecraftClient.player != null && minecraftClient.getConnection() != null && !isTyping(minecraftClient.screen)) {
-						minecraftClient.player.connection.sendCommand(INSTANCE.keyToCommand.get(keyCode));
+					if (minecraftClient.player != null && minecraftClient.getConnection() != null && !isTyping(minecraftClient.gui.screen())) {
+						minecraftClient.player.connection.sendCommand(keyCode.command);
 
 					}
 				}
-				INSTANCE.keyStates.put(keyCode, isPressed);
+				keyCode.keyState = isPressed;
 			}
 		});
 	}
 
 	private void loadKeyMappings() {
-		INSTANCE.keyToCommand.clear();
-		INSTANCE.keyStates.clear();
+		INSTANCE.entries.clear();
+
 
 
 		if (Files.exists(configPath)) {
@@ -132,9 +133,10 @@ public class HotcmdsClient implements ClientModInitializer {
 				}.getType());
 				LOGGER.info("loaded into put" + pairs.isEmpty());
 				for (KeyCommandPair pair : pairs) {
-					INSTANCE.keyToCommand.put(pair.key, pair.command);
-					INSTANCE.keyStates.put(pair.key, false);
-					LOGGER.info("loaded into put");
+
+					INSTANCE.entries.add(pair);
+
+					LOGGER.info("loaded into put"+entries+pair);
 				}
 				LOGGER.info("loaded");
 
@@ -154,12 +156,9 @@ public class HotcmdsClient implements ClientModInitializer {
 			System.err.println("Failed to create config directory: " + e.getMessage());
 			return;
 		}
-		List<KeyCommandPair> pairs = new ArrayList<>();
-		for (Map.Entry<Integer, String> entry : INSTANCE.keyToCommand.entrySet()) {
-			pairs.add(new KeyCommandPair(entry.getKey(), entry.getValue()));
-		}
+
 		try (Writer writer = Files.newBufferedWriter(configPath)) {
-			gson.toJson(pairs, writer);
+			gson.toJson(entries, writer);
 			LOGGER.info("saved");
 		} catch (IOException e) {
 			System.err.println("Failed to save key mappings: " + e.getMessage());
@@ -169,24 +168,26 @@ public class HotcmdsClient implements ClientModInitializer {
 
 	public void addKeyMapping(int keyCode, String command) {
 
-		INSTANCE.keyToCommand.put(keyCode, command);
-		INSTANCE.keyStates.putIfAbsent(keyCode, false);
+
+		INSTANCE.entries.add(new KeyCommandPair(keyCode, command));
 
 		saveKeyMappings();
 	}
 
 	public void removeKey(int keyCode) {
-		INSTANCE.keyToCommand.remove(keyCode);
-		INSTANCE.keyStates.remove(keyCode);
+
+		for(KeyCommandPair pair: INSTANCE.entries){
+			if(pair.key == keyCode){
+				INSTANCE.entries.remove(pair);
+			}
+		}
 		saveKeyMappings();
 	}
 
 	public List<KeyCommandPair> getKeybinds() {
-		List<KeyCommandPair> list = new ArrayList<>();
-		for (Map.Entry<Integer, String> entry : INSTANCE.keyToCommand.entrySet()) {
-			list.add(new KeyCommandPair(entry.getKey(), entry.getValue()));
-		}
-		return list;
+
+
+		return INSTANCE.entries;
 	}
 
 	private boolean isTyping(net.minecraft.client.gui.screens.Screen screen){
@@ -229,7 +230,7 @@ public class HotcmdsClient implements ClientModInitializer {
 										AtomicBoolean open = new AtomicBoolean(true);
 										ClientTickEvents.END_CLIENT_TICK.register(minecraftClient -> {
 											if (open.get())
-												client.setScreen(new ListMenu(client.screen));
+												client.setScreenAndShow(new ListMenu(client.gui.screen()));
 											open.set(false);
 										});
 
