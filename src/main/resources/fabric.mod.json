@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "commandhotkeys",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"name": "Command Hotkeys",
 	"description": "Bind a key to any command you want. /hotcmds to open menu",
 	"authors": [
