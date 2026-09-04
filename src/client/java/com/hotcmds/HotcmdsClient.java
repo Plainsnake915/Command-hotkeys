@@ -112,7 +112,7 @@ public class HotcmdsClient implements ClientModInitializer {
 				}
 				boolean wasPressed = keyCode.keyState;
 				if (isPressed && !wasPressed) {
-					if (minecraftClient.player != null && minecraftClient.getConnection() != null && !isTyping(minecraftClient.gui.screen())) {
+					if (minecraftClient.player != null && minecraftClient.getConnection() != null && checkScreen(minecraftClient.gui.screen(), keyCode)) {
 						minecraftClient.player.connection.sendCommand(keyCode.command);
 
 					}
@@ -190,30 +190,13 @@ public class HotcmdsClient implements ClientModInitializer {
 		return INSTANCE.entries;
 	}
 
-	private boolean isTyping(net.minecraft.client.gui.screens.Screen screen){
-		if (screen == null) return false;
-
-		// 1. If the focused element is a text field → typing
-		if (screen.getFocused() instanceof EditBox) {
+	private boolean checkScreen(net.minecraft.client.gui.screens.Screen screen, KeyCommandPair pair){
+		if (screen == null) return true;
+		else if (pair.inMenu) {
 			return true;
+
 		}
-
-		// 2. If the screen is a chat screen → typing
-		if (screen instanceof ChatScreen) {
-			return true;
-		}
-
-		// 3. If the screen is a sign/book/anvil editor → typing
-		if (screen instanceof AbstractSignEditScreen
-				|| screen instanceof AnvilScreen
-				|| screen instanceof BookEditScreen) {
-			return true;
-		}
-
-
 		return false;
-
-
 
 	}
 
